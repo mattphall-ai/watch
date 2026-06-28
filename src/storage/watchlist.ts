@@ -25,7 +25,7 @@ export function addToWatchList(items: WatchListItem[], media: MediaDetails): Wat
     year: media.year,
     posterUrl: media.posterUrl,
     tmdbScore: media.tmdbScore,
-    providers: media.providers,
+    availability: media.availability,
     watched: false,
     addedAt: Date.now(),
   };

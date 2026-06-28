@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { MediaDetails, MediaType, SearchResultItem } from "../types";
 import { getMediaDetails, searchMedia } from "../api/tmdb";
+import { AvailabilityLines } from "./AvailabilityLines";
 
 interface Props {
   mediaType: MediaType;
@@ -75,25 +76,10 @@ export function SearchPanel({ mediaType, onAdd, isInList }: Props) {
                     <span className="status-text">Loading...</span>
                   ) : (
                     <>
-                      <span className="score-line">
-                        TMDB score:{" "}
-                        {details.tmdbScore !== null ? `${details.tmdbScore}/10` : "N/A"}
+                      <span className="meta-line">
+                        Score: {details.tmdbScore !== null ? `${details.tmdbScore}/10` : "N/A"}
                       </span>
-                      <div className="provider-list">
-                        {details.providers.length === 0 ? (
-                          <span className="status-text">Not currently streaming</span>
-                        ) : (
-                          details.providers.map((p) => (
-                            <img
-                              key={p.id}
-                              className="provider-logo"
-                              src={p.logoUrl}
-                              alt={p.name}
-                              title={p.name}
-                            />
-                          ))
-                        )}
-                      </div>
+                      <AvailabilityLines availability={details.availability} />
                     </>
                   )}
                 </div>

@@ -8,10 +8,9 @@ export interface SearchResultItem {
   posterUrl: string | null;
 }
 
-export interface Provider {
-  id: number;
-  name: string;
-  logoUrl: string;
+export interface AvailabilityInfo {
+  streamOn: string[];
+  rentOn: string[];
 }
 
 export interface MediaDetails {
@@ -21,7 +20,7 @@ export interface MediaDetails {
   year: string;
   posterUrl: string | null;
   tmdbScore: number | null;
-  providers: Provider[];
+  availability: AvailabilityInfo;
 }
 
 export interface WatchListItem {
@@ -31,7 +30,7 @@ export interface WatchListItem {
   year: string;
   posterUrl: string | null;
   tmdbScore: number | null;
-  providers: Provider[];
+  availability: AvailabilityInfo;
   watched: boolean;
   addedAt: number;
 }

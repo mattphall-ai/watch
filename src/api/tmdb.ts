@@ -1,4 +1,4 @@
-import type { MediaDetails, MediaType, Provider, SearchResultItem } from "../types";
+import type { AvailabilityInfo, MediaDetails, MediaType, SearchResultItem } from "../types";
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY as string | undefined;
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -64,6 +64,8 @@ interface TmdbWatchProvidersResponse {
       flatrate?: TmdbProvider[];
       ads?: TmdbProvider[];
       free?: TmdbProvider[];
+      rent?: TmdbProvider[];
+      buy?: TmdbProvider[];
     }
   >;
 }
@@ -94,23 +96,17 @@ export async function getMediaDetails(id: number, mediaType: MediaType): Promise
   ]);
 
   const regionData = watchProviders.results[WATCH_REGION];
-  const providerList = [
+  const streamNames = uniqueNames([
     ...(regionData?.flatrate ?? []),
     ...(regionData?.free ?? []),
     ...(regionData?.ads ?? []),
-  ];
+  ]);
+  const rentNames = uniqueNames([...(regionData?.rent ?? []), ...(regionData?.buy ?? [])]);
 
-  const seen = new Set<number>();
-  const providers: Provider[] = [];
-  for (const p of providerList) {
-    if (seen.has(p.provider_id)) continue;
-    seen.add(p.provider_id);
-    providers.push({
-      id: p.provider_id,
-      name: p.provider_name,
-      logoUrl: `${IMAGE_BASE}${p.logo_path}`,
-    });
-  }
+  const availability: AvailabilityInfo = {
+    streamOn: streamNames,
+    rentOn: rentNames.filter((name) => !streamNames.includes(name)),
+  };
 
   const dateStr = mediaType === "movie" ? details.release_date : details.first_air_date;
 
@@ -121,6 +117,17 @@ export async function getMediaDetails(id: number, mediaType: MediaType): Promise
     year: dateStr ? dateStr.slice(0, 4) : "",
     posterUrl: details.poster_path ? `${IMAGE_BASE}${details.poster_path}` : null,
     tmdbScore: details.vote_average ? Math.round(details.vote_average * 10) / 10 : null,
-    providers,
+    availability,
   };
+}
+
+function uniqueNames(providers: TmdbProvider[]): string[] {
+  const seen = new Set<number>();
+  const names: string[] = [];
+  for (const p of providers) {
+    if (seen.has(p.provider_id)) continue;
+    seen.add(p.provider_id);
+    names.push(p.provider_name);
+  }
+  return names;
 }
