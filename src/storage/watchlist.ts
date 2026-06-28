@@ -1,11 +1,13 @@
 import type { MediaDetails, WatchListItem } from "../types";
 
-const STORAGE_KEY = "watchlist:v1";
+const STORAGE_KEY = "watchlist:v2";
 
 export function loadWatchList(): WatchListItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as WatchListItem[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as WatchListItem[];
+    return parsed.filter((item) => item.availability != null);
   } catch {
     return [];
   }
