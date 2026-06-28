@@ -13,42 +13,36 @@ export function SearchPanel({ mediaType, onAdd, isInList }: Props) {
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detailsCache, setDetailsCache] = useState<Record<number, MediaDetails>>({});
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [detailsById, setDetailsById] = useState<Record<number, MediaDetails>>({});
 
   useEffect(() => {
     const trimmed = query.trim();
     if (!trimmed) {
       setResults([]);
+      setDetailsById({});
       setError(null);
       return;
     }
     const timer = setTimeout(() => {
       setLoading(true);
       setError(null);
+      setDetailsById({});
       searchMedia(trimmed, mediaType)
-        .then((r) => setResults(r))
+        .then((r) => {
+          setResults(r);
+          for (const item of r) {
+            getMediaDetails(item.id, mediaType)
+              .then((details) =>
+                setDetailsById((prev) => ({ ...prev, [item.id]: details }))
+              )
+              .catch(() => {});
+          }
+        })
         .catch((e: Error) => setError(e.message))
         .finally(() => setLoading(false));
     }, 350);
     return () => clearTimeout(timer);
   }, [query, mediaType]);
-
-  async function handleExpand(item: SearchResultItem) {
-    if (expandedId === item.id) {
-      setExpandedId(null);
-      return;
-    }
-    setExpandedId(item.id);
-    if (!detailsCache[item.id]) {
-      try {
-        const details = await getMediaDetails(item.id, mediaType);
-        setDetailsCache((prev) => ({ ...prev, [item.id]: details }));
-      } catch (e) {
-        setError((e as Error).message);
-      }
-    }
-  }
 
   return (
     <div className="search-panel">
@@ -63,34 +57,31 @@ export function SearchPanel({ mediaType, onAdd, isInList }: Props) {
       {error && <p className="status-text error">{error}</p>}
       <ul className="result-list">
         {results.map((item) => {
-          const details = detailsCache[item.id];
-          const expanded = expandedId === item.id;
+          const details = detailsById[item.id];
           const inList = isInList(item.id);
           return (
             <li key={item.id} className="result-item">
-              <button className="result-row" onClick={() => handleExpand(item)}>
+              <div className="result-row">
                 {item.posterUrl ? (
                   <img className="poster-thumb" src={item.posterUrl} alt="" />
                 ) : (
                   <div className="poster-thumb poster-placeholder" />
                 )}
-                <span className="result-title">
-                  {item.title} {item.year && <span className="result-year">({item.year})</span>}
-                </span>
-              </button>
-              {expanded && (
-                <div className="result-detail">
+                <div className="result-info">
+                  <span className="result-title">
+                    {item.title} {item.year && <span className="result-year">({item.year})</span>}
+                  </span>
                   {!details ? (
-                    <p className="status-text">Loading details...</p>
+                    <span className="status-text">Loading...</span>
                   ) : (
                     <>
-                      <p className="score-line">
+                      <span className="score-line">
                         TMDB score:{" "}
                         {details.tmdbScore !== null ? `${details.tmdbScore}/10` : "N/A"}
-                      </p>
+                      </span>
                       <div className="provider-list">
                         {details.providers.length === 0 ? (
-                          <span className="status-text">No streaming providers found</span>
+                          <span className="status-text">Not currently streaming</span>
                         ) : (
                           details.providers.map((p) => (
                             <img
@@ -103,17 +94,17 @@ export function SearchPanel({ mediaType, onAdd, isInList }: Props) {
                           ))
                         )}
                       </div>
-                      <button
-                        className="add-button"
-                        disabled={inList}
-                        onClick={() => onAdd(details)}
-                      >
-                        {inList ? "Added" : "Add to watch list"}
-                      </button>
                     </>
                   )}
                 </div>
-              )}
+                <button
+                  className="add-button"
+                  disabled={!details || inList}
+                  onClick={() => details && onAdd(details)}
+                >
+                  {inList ? "Added" : "Add"}
+                </button>
+              </div>
             </li>
           );
         })}

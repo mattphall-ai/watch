@@ -95,7 +95,7 @@ body {
 
 .result-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.7rem;
   width: 100%;
   padding: 0.6rem 0;
@@ -118,6 +118,14 @@ body {
   background: #2a2a2a;
 }
 
+.result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
 .result-title {
   flex: 1;
 }
@@ -127,36 +135,34 @@ body {
   font-size: 0.85rem;
 }
 
-.result-detail {
-  padding: 0 0 0.8rem 3rem;
-}
-
 .score-line {
-  margin: 0.3rem 0;
+  margin: 0.1rem 0;
   font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .provider-list {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
-  margin: 0.4rem 0;
+  margin: 0.2rem 0;
 }
 
 .provider-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
 }
 
 .add-button {
-  margin-top: 0.4rem;
-  padding: 0.5rem 1rem;
+  align-self: flex-start;
+  padding: 0.45rem 0.8rem;
   background: #3a7bfd;
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .add-button:disabled {
@@ -174,9 +180,13 @@ body {
 
 .watchlist-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.7rem;
   flex: 1;
+}
+
+.watchlist-row input[type="checkbox"] {
+  margin-top: 0.3rem;
 }
 
 .watchlist-item.watched .result-title {

@@ -28,9 +28,26 @@ export function WatchListPanel({ items, onToggle, onRemove }: Props) {
             ) : (
               <div className="poster-thumb poster-placeholder" />
             )}
-            <span className="result-title">
-              {item.title} {item.year && <span className="result-year">({item.year})</span>}
-            </span>
+            <div className="result-info">
+              <span className="result-title">
+                {item.title} {item.year && <span className="result-year">({item.year})</span>}
+              </span>
+              <div className="provider-list">
+                {item.providers.length === 0 ? (
+                  <span className="status-text">Not currently streaming</span>
+                ) : (
+                  item.providers.map((p) => (
+                    <img
+                      key={p.id}
+                      className="provider-logo"
+                      src={p.logoUrl}
+                      alt={p.name}
+                      title={p.name}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
           </label>
           <button className="remove-button" onClick={() => onRemove(item.id)} aria-label="Remove">
             ✕

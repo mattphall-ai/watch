@@ -31,6 +31,7 @@ export interface WatchListItem {
   year: string;
   posterUrl: string | null;
   tmdbScore: number | null;
+  providers: Provider[];
   watched: boolean;
   addedAt: number;
 }
