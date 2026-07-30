@@ -150,6 +150,19 @@ body {
   transition-delay: 0.2s;
 }
 
+.bignum {
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity 1.1s ease,
+    transform 1.1s ease;
+}
+
+.bignum.in-view {
+  opacity: 1;
+  transform: scale(1);
+}
+
 /* ---------- Hero ---------- */
 
 .hero {
@@ -368,12 +381,50 @@ body {
   padding-right: 30px;
 }
 
+.year-bignum {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(220px, 26vw, 460px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--gold);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.year-bignum.in-view {
+  opacity: 0.14;
+}
+
 .year-copy {
   position: sticky;
   top: calc(var(--header-h) + 60px);
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.year-copy .reveal:nth-child(1) {
+  transition-delay: 0s;
+}
+
+.year-copy .reveal:nth-child(2) {
+  transition-delay: 0.1s;
+}
+
+.year-copy .reveal:nth-child(3) {
+  transition-delay: 0.2s;
+}
+
+.year-copy .reveal:nth-child(4) {
+  transition-delay: 0.3s;
 }
 
 .eyebrow {
@@ -403,6 +454,7 @@ body {
 
 .touchpoints {
   position: relative;
+  z-index: 1;
 }
 
 .network {
@@ -504,6 +556,7 @@ body {
 .transition-block p + p {
   margin-top: 6px;
   color: var(--ink);
+  transition-delay: 0.12s;
 }
 
 /* ---------- Closing ---------- */
@@ -566,50 +619,6 @@ body {
   transition-delay: 0.3s;
 }
 
-/* ---------- Bottom progress track ---------- */
-
-.progress-track {
-  position: fixed;
-  left: 40px;
-  right: 40px;
-  bottom: 36px;
-  height: 24px;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-}
-
-.progress-line {
-  position: absolute;
-  left: 0;
-  right: 18px;
-  top: 50%;
-  height: 2px;
-  transform: translateY(-50%);
-  background: var(--gold);
-}
-
-.progress-arrow {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gold);
-}
-
-.progress-dot {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--gold);
-  background: var(--bg);
-  transform: translate(0, -50%);
-  will-change: transform;
-}
-
 /* ---------- Responsive ---------- */
 
 @media (max-width: 900px) {
@@ -665,9 +674,8 @@ body {
     padding: calc(var(--header-h) + 40px) 24px 60px;
   }
 
-  .progress-track {
-    left: 20px;
-    right: 20px;
+  .year-bignum {
+    font-size: clamp(120px, 42vw, 220px);
   }
 }
 
@@ -678,10 +686,15 @@ body {
 
   .reveal,
   .touchpoint,
+  .bignum,
   .spine-loop-draw {
     transition: none !important;
     transform: none !important;
     opacity: 1 !important;
+  }
+
+  .year-bignum {
+    opacity: 0.14 !important;
   }
 
   .scroll-cue-dot,

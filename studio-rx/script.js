@@ -35,7 +35,7 @@
   }
 
   // ---------- Generic reveal-on-scroll ----------
-  const revealEls = document.querySelectorAll(".reveal");
+  const revealEls = document.querySelectorAll(".reveal, .bignum");
   const revealIO = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -48,11 +48,6 @@
     { threshold: 0.3 },
   );
   revealEls.forEach((el) => revealIO.observe(el));
-
-  // ---------- Bottom scroll-progress track ----------
-  const progressDot = document.getElementById("progress-dot");
-  let dotTarget = 0;
-  let dotCurrent = 0;
 
   // ---------- Central ecosystem spine ----------
   const ecosystem = document.getElementById("ecosystem");
@@ -287,27 +282,13 @@
     );
   }
 
-  function updateProgressDot() {
-    dotTarget = clamp(
-      window.scrollY /
-        (document.documentElement.scrollHeight - window.innerHeight),
-      0,
-      1,
-    );
-  }
-
   function onScroll() {
     updateHeader();
     updateSpine();
-    updateProgressDot();
   }
 
   let t = 0;
   function tick() {
-    dotCurrent = lerp(dotCurrent, dotTarget, 0.12);
-    const track = progressDot.parentElement.clientWidth - 18 - 24;
-    progressDot.style.transform = `translate(${dotCurrent * track}px, -50%)`;
-
     spineCurrent = lerp(spineCurrent, spineTarget, 0.12);
     spineProgress.style.transform = `scaleY(${spineCurrent})`;
 
