@@ -118,8 +118,9 @@
         0,
         1,
       );
+      const scale = lerp(1.22, 1, progress);
       item.style.opacity = progress;
-      item.style.transform = `translateY(${18 * (1 - progress)}px)`;
+      item.style.transform = `translateY(${18 * (1 - progress)}px) scale(${scale})`;
     });
   }
 
