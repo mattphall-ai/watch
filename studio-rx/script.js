@@ -3,19 +3,6 @@
     "(prefers-reduced-motion: reduce)",
   ).matches;
 
-  const header = document.getElementById("site-header");
-  const wrap = document.getElementById("parallax-wrap");
-  const copyBlock = document.getElementById("copy-block");
-  const videoCard = document.getElementById("video-card");
-  const videoTitle = document.getElementById("video-title");
-  const videoLink = document.getElementById("video-link");
-  const progressDot = document.getElementById("progress-dot");
-  const canvas = document.getElementById("wave");
-  const ctx = canvas.getContext("2d");
-
-  let dotTarget = 0;
-  let dotCurrent = 0;
-
   function clamp(v, min, max) {
     return Math.min(max, Math.max(min, v));
   }
@@ -24,35 +11,283 @@
     return a + (b - a) * t;
   }
 
-  // ---------- Header state ----------
+  let dotRgb = "19,19,19";
+  let networkLineRgb = "180,177,168";
+  function refreshThemeColors() {
+    const style = getComputedStyle(document.documentElement);
+    dotRgb = style.getPropertyValue("--dot-rgb").trim() || dotRgb;
+    networkLineRgb =
+      style.getPropertyValue("--network-line-rgb").trim() || networkLineRgb;
+  }
+  refreshThemeColors();
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", refreshThemeColors);
+  new MutationObserver(refreshThemeColors).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+
+  // ---------- Header ----------
+  const header = document.getElementById("site-header");
   function updateHeader() {
     header.classList.toggle("scrolled", window.scrollY > 4);
   }
 
-  // ---------- Hero parallax + focus zoom through the wrap ----------
-  function updateStage() {
-    const rect = wrap.getBoundingClientRect();
-    const scrollable = rect.height - window.innerHeight;
-    const progress = clamp(-rect.top / scrollable, 0, 1);
+  // ---------- Generic reveal-on-scroll ----------
+  const revealEls = document.querySelectorAll(".reveal");
+  const revealIO = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in-view");
+          revealIO.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.3 },
+  );
+  revealEls.forEach((el) => revealIO.observe(el));
 
-    // Phase A (0 -> 0.55): gentle parallax separation between copy and card.
-    // Phase B (0.55 -> 1): card zooms to fill the viewport, copy fades out.
-    const parallaxT = clamp(progress / 0.55, 0, 1);
-    const zoomT = clamp((progress - 0.55) / 0.45, 0, 1);
+  // ---------- Bottom scroll-progress track ----------
+  const progressDot = document.getElementById("progress-dot");
+  let dotTarget = 0;
+  let dotCurrent = 0;
 
-    if (!reduceMotion) {
-      copyBlock.style.transform = `translateY(${lerp(0, -40, parallaxT)}px)`;
-      copyBlock.style.opacity = String(1 - zoomT);
+  // ---------- Central ecosystem spine ----------
+  const ecosystem = document.getElementById("ecosystem");
+  const spineProgress = document.getElementById("spine-progress");
+  let spineTarget = 0;
+  let spineCurrent = 0;
 
-      const scale = lerp(1, 1.65, zoomT);
-      const liftY = lerp(0, -30, parallaxT) - zoomT * 20;
-      videoCard.style.transform = `translateY(${liftY}px) scale(${scale})`;
+  // Backward "learning" flow kicks in once the second transition beat appears.
+  let backwardActive = false;
+  const spineParticles = document.getElementById("spine-particles");
+  const PARTICLE_COUNT = 5;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = document.createElement("div");
+    p.className = "particle";
+    p.style.animationDuration = `${3.4 + i * 0.6}s`;
+    p.style.animationDelay = `${i * 0.7}s`;
+    spineParticles.appendChild(p);
+  }
+
+  const transition2 = document.getElementById("transition-2");
+  const flowIO = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          backwardActive = true;
+          spineParticles.classList.add("flow-up");
+          flowIO.disconnect();
+        }
+      });
+    },
+    { threshold: 0, rootMargin: "0px 0px -20% 0px" },
+  );
+  flowIO.observe(transition2);
+
+  // Spine resolves into a closed loop as the ecosystem section hands off to the closing beat.
+  const spineLoopDraw = document.getElementById("spine-loop-draw");
+  const loopIO = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          spineLoopDraw.classList.add("in-view");
+          loopIO.disconnect();
+        }
+      });
+    },
+    { threshold: 0.5 },
+  );
+  loopIO.observe(document.querySelector(".spine-loop-wrap"));
+
+  // ---------- Year touchpoint networks ----------
+  class YearNetwork {
+    constructor(root) {
+      this.root = root;
+      this.canvas = root.querySelector("canvas.network");
+      this.ctx = this.canvas.getContext("2d");
+      this.items = Array.from(root.querySelectorAll(".touchpoint"));
+      this.side = root.closest(".year-block").dataset.side;
+      this.revealed = new Array(this.items.length).fill(false);
+      this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      this.items.forEach((item, i) => {
+        item.style.transitionDelay = `${i * 70}ms`;
+      });
+
+      this.io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const idx = this.items.indexOf(entry.target);
+            if (entry.isIntersecting && idx !== -1) {
+              entry.target.classList.add("in-view");
+              this.revealed[idx] = true;
+              this.io.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.5 },
+      );
+      this.items.forEach((item) => this.io.observe(item));
+
+      this.resize();
     }
 
-    videoCard.classList.toggle("is-focused", zoomT > 0.15);
-    videoLink.style.opacity = String(1 - zoomT);
-    videoTitle.style.opacity = String(lerp(1, 1, 1));
+    resize() {
+      const rect = this.root.getBoundingClientRect();
+      this.w = rect.width;
+      this.h = rect.height;
+      this.canvas.width = this.w * this.dpr;
+      this.canvas.height = this.h * this.dpr;
+      this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    }
 
+    tipPoints() {
+      const rootRect = this.root.getBoundingClientRect();
+      return this.items.map((item) => {
+        const r = item.getBoundingClientRect();
+        const y = r.top + r.height / 2 - rootRect.top;
+        const x = this.side === "left" ? 0 : this.w;
+        return { x, y };
+      });
+    }
+
+    draw(t) {
+      const ctx = this.ctx;
+      ctx.clearRect(0, 0, this.w, this.h);
+      const points = this.tipPoints();
+
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < points.length - 1; i++) {
+        if (!this.revealed[i] || !this.revealed[i + 1]) continue;
+        const a = points[i];
+        const b = points[i + 1];
+
+        ctx.strokeStyle = `rgba(${networkLineRgb},0.55)`;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+
+        if (backwardActive && !reduceMotion) {
+          const phase = (t * 0.4 + i * 0.35) % 1;
+          const travel = 1 - phase; // travels from b (later item) back to a (earlier item)
+          const px = lerp(b.x, a.x, travel);
+          const py = lerp(b.y, a.y, travel);
+          ctx.beginPath();
+          ctx.arc(px, py, 3, 0, Math.PI * 2);
+          ctx.fillStyle = "#f2b400";
+          ctx.fill();
+        }
+      }
+
+      points.forEach((pt, i) => {
+        if (!this.revealed[i]) return;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${dotRgb},0.55)`;
+        ctx.fill();
+      });
+    }
+  }
+
+  const networks = Array.from(document.querySelectorAll(".touchpoints")).map(
+    (el) => new YearNetwork(el),
+  );
+
+  // ---------- Closing constellation ----------
+  const constellationCanvas = document.getElementById("constellation");
+  const cctx = constellationCanvas.getContext("2d");
+  let cw = 0;
+  let ch = 0;
+  const cdpr = Math.min(window.devicePixelRatio || 1, 2);
+  let nodes = [];
+  let constellationActive = false;
+
+  function seededRandom(seed) {
+    let s = seed;
+    return () => {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+  }
+
+  function buildConstellation() {
+    const rect = constellationCanvas.getBoundingClientRect();
+    cw = rect.width;
+    ch = rect.height;
+    constellationCanvas.width = cw * cdpr;
+    constellationCanvas.height = ch * cdpr;
+    cctx.setTransform(cdpr, 0, 0, cdpr, 0, 0);
+
+    const rand = seededRandom(42);
+    const count = 22;
+    nodes = Array.from({ length: count }, (_, i) => ({
+      x: rand() * cw,
+      y: rand() * ch,
+      r: 1.6 + rand() * 2.2,
+      phase: rand() * Math.PI * 2,
+      speed: 0.4 + rand() * 0.4,
+      accent: i % 7 === 0,
+    }));
+  }
+
+  function drawConstellation(t) {
+    cctx.clearRect(0, 0, cw, ch);
+    const positioned = nodes.map((n) => ({
+      ...n,
+      x: n.x + Math.sin(t * n.speed + n.phase) * 10,
+      y: n.y + Math.cos(t * n.speed * 0.8 + n.phase) * 10,
+    }));
+
+    cctx.lineWidth = 1;
+    for (let i = 0; i < positioned.length; i++) {
+      for (let j = i + 1; j < positioned.length; j++) {
+        const a = positioned[i];
+        const b = positioned[j];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (dist < 150) {
+          cctx.strokeStyle = `rgba(${networkLineRgb},${0.16 * (1 - dist / 150)})`;
+          cctx.beginPath();
+          cctx.moveTo(a.x, a.y);
+          cctx.lineTo(b.x, b.y);
+          cctx.stroke();
+        }
+      }
+    }
+
+    positioned.forEach((n) => {
+      cctx.beginPath();
+      cctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      cctx.fillStyle = n.accent ? "#f2b400" : `rgba(${dotRgb},0.4)`;
+      cctx.fill();
+    });
+  }
+
+  buildConstellation();
+  const constellationIO = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        constellationActive = entry.isIntersecting;
+      });
+    },
+    { threshold: 0 },
+  );
+  constellationIO.observe(constellationCanvas);
+
+  // ---------- Scroll + animation loop ----------
+  function updateSpine() {
+    const rect = ecosystem.getBoundingClientRect();
+    spineTarget = clamp(
+      (window.innerHeight - rect.top) / (rect.height + window.innerHeight),
+      0,
+      1,
+    );
+  }
+
+  function updateProgressDot() {
     dotTarget = clamp(
       window.scrollY /
         (document.documentElement.scrollHeight - window.innerHeight),
@@ -61,96 +296,40 @@
     );
   }
 
-  // ---------- Reveal-on-scroll for finale ----------
-  const revealEls = document.querySelectorAll(".reveal");
-  const io = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("in-view");
-        }
-      });
-    },
-    { threshold: 0.4 },
-  );
-  revealEls.forEach((el) => io.observe(el));
+  function onScroll() {
+    updateHeader();
+    updateSpine();
+    updateProgressDot();
+  }
 
-  // ---------- Dotted wave canvas (parallax depth layers) ----------
-  let dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let w = 0;
-  let h = 0;
   let t = 0;
-
-  function resizeCanvas() {
-    const bounds = canvas.getBoundingClientRect();
-    w = bounds.width;
-    h = bounds.height;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function drawWave() {
-    ctx.clearRect(0, 0, w, h);
-
-    // A dotted terrain: a grid of dots undulating like rolling hills,
-    // with near rows (bottom) bigger/darker for a sense of depth.
-    const cols = 46;
-    const rows = 22;
-    const horizon = h * 0.28;
-    const parallaxShift = dotTarget * 26;
-
-    for (let r = 0; r < rows; r++) {
-      const rowT = r / (rows - 1);
-      const baseY = horizon + rowT * rowT * (h - horizon);
-      const amp = 6 + rowT * 26;
-      const radius = 0.5 + rowT * 1.6;
-      const alpha = 0.05 + rowT * 0.5;
-
-      for (let c = 0; c < cols; c++) {
-        const colT = c / (cols - 1);
-        const wave =
-          Math.sin(colT * Math.PI * 2.2 + t + rowT * 1.6) * amp +
-          Math.sin(colT * Math.PI * 4.4 - t * 1.3 + rowT * 2.4) * amp * 0.35;
-        const x = colT * w;
-        const y = baseY + wave - parallaxShift * rowT;
-
-        if (y < -4 || y > h + 4) continue;
-
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(20,20,20,${alpha})`;
-        ctx.fill();
-      }
-    }
-  }
-
   function tick() {
     dotCurrent = lerp(dotCurrent, dotTarget, 0.12);
     const track = progressDot.parentElement.clientWidth - 18 - 24;
     progressDot.style.transform = `translate(${dotCurrent * track}px, -50%)`;
 
+    spineCurrent = lerp(spineCurrent, spineTarget, 0.12);
+    spineProgress.style.transform = `scaleY(${spineCurrent})`;
+
     if (!reduceMotion) {
-      t += 0.012;
-      drawWave();
+      t += 0.016;
+      networks.forEach((net) => net.draw(t));
+      if (constellationActive) drawConstellation(t);
+    } else {
+      networks.forEach((net) => net.draw(0));
+      drawConstellation(0);
     }
 
     requestAnimationFrame(tick);
   }
 
-  function onScroll() {
-    updateHeader();
-    updateStage();
-  }
-
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", () => {
-    resizeCanvas();
-    updateStage();
+    networks.forEach((net) => net.resize());
+    buildConstellation();
+    onScroll();
   });
 
-  resizeCanvas();
   onScroll();
-  if (reduceMotion) drawWave();
   requestAnimationFrame(tick);
 })();
