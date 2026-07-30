@@ -1,0 +1,368 @@
+:root {
+  --bg: #f2f1ee;
+  --ink: #131313;
+  --ink-soft: #4a4a48;
+  --line: #d8d6d0;
+  --card: #ffffff;
+  --gold: #f2b400;
+  --header-h: 88px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Helvetica,
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Header ---------- */
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: var(--header-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  transition: box-shadow 0.3s ease;
+}
+
+.site-header.scrolled {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 40px;
+}
+
+.logo {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-size: 18px;
+}
+
+.tag-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.tag-link svg {
+  transition: transform 0.25s ease;
+}
+
+.tag-link:hover svg {
+  transform: translateX(4px);
+}
+
+.header-rule {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink);
+}
+
+/* ---------- Parallax hero / focus sequence ---------- */
+
+.parallax-wrap {
+  position: relative;
+  height: 260vh;
+}
+
+.stage-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.stage-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 60px;
+  position: relative;
+}
+
+.copy-block {
+  will-change: transform, opacity;
+}
+
+.lead {
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.5;
+  font-weight: 400;
+  max-width: 30ch;
+  margin: 0;
+}
+
+.video-card {
+  justify-self: end;
+  width: 100%;
+  max-width: 640px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.25);
+  will-change: transform;
+}
+
+.video-visual {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: linear-gradient(180deg, #fbfbfa 0%, #f4f3f1 100%);
+  overflow: hidden;
+}
+
+#wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.play-btn:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+  background: var(--ink);
+  color: var(--card);
+}
+
+.video-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 26px;
+  border-top: 1px solid var(--line);
+}
+
+.video-title {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-size: 15px;
+  transition:
+    font-size 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s ease;
+}
+
+/* focused / zoomed state applied via JS as scroll progresses through the wrap */
+.video-card.is-focused {
+  border-radius: 0;
+}
+
+.video-card.is-focused .video-title {
+  font-size: clamp(20px, 3vw, 34px);
+}
+
+/* ---------- Finale ---------- */
+
+.finale {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 40px;
+}
+
+.finale-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.logo.big {
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+.finale-tag {
+  margin: 0;
+  font-size: clamp(40px, 8vw, 96px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.finale-arrow {
+  color: var(--gold);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal:nth-child(2) {
+  transition-delay: 0.12s;
+}
+
+.reveal:nth-child(3) {
+  transition-delay: 0.24s;
+}
+
+/* ---------- Bottom progress track ---------- */
+
+.progress-track {
+  position: fixed;
+  left: 40px;
+  right: 40px;
+  bottom: 36px;
+  height: 24px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+}
+
+.progress-line {
+  position: absolute;
+  left: 0;
+  right: 18px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--gold);
+}
+
+.progress-arrow {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+}
+
+.progress-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: var(--bg);
+  transform: translate(0, -50%);
+  will-change: transform;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 880px) {
+  .stage-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .video-card {
+    justify-self: stretch;
+  }
+
+  .parallax-wrap {
+    height: 220vh;
+  }
+
+  .header-inner {
+    padding: 0 20px;
+  }
+
+  .progress-track {
+    left: 20px;
+    right: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .copy-block,
+  .video-card,
+  .reveal {
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .reveal {
+    opacity: 1;
+  }
+}
