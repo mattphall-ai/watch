@@ -97,100 +97,31 @@
   );
   loopIO.observe(document.querySelector(".spine-loop-wrap"));
 
-  // ---------- Year touchpoint networks ----------
-  class YearNetwork {
-    constructor(root) {
-      this.root = root;
-      this.canvas = root.querySelector("canvas.network");
-      this.ctx = this.canvas.getContext("2d");
-      this.items = Array.from(root.querySelectorAll(".touchpoint"));
-      this.side = root.closest(".year-block").dataset.side;
-      this.revealed = new Array(this.items.length).fill(false);
-      this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  // ---------- Year touchpoint bullets: scroll-synced reveal, alternating sides ----------
+  const touchpoints = [];
+  document.querySelectorAll(".touchpoint-list").forEach((list) => {
+    Array.from(list.children).forEach((item, i) => {
+      item.dataset.side = i % 2 === 0 ? "left" : "right";
+      touchpoints.push(item);
+    });
+  });
 
-      this.items.forEach((item, i) => {
-        item.style.transitionDelay = `${i * 70}ms`;
-      });
-
-      this.io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            const idx = this.items.indexOf(entry.target);
-            if (entry.isIntersecting && idx !== -1) {
-              entry.target.classList.add("in-view");
-              this.revealed[idx] = true;
-              this.io.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.5 },
+  function updateTouchpoints() {
+    if (reduceMotion) return;
+    const vh = window.innerHeight;
+    const revealStart = vh * 0.95;
+    const revealEnd = vh * 0.55;
+    touchpoints.forEach((item) => {
+      const top = item.getBoundingClientRect().top;
+      const progress = clamp(
+        (revealStart - top) / (revealStart - revealEnd),
+        0,
+        1,
       );
-      this.items.forEach((item) => this.io.observe(item));
-
-      this.resize();
-    }
-
-    resize() {
-      const rect = this.root.getBoundingClientRect();
-      this.w = rect.width;
-      this.h = rect.height;
-      this.canvas.width = this.w * this.dpr;
-      this.canvas.height = this.h * this.dpr;
-      this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    }
-
-    tipPoints() {
-      const rootRect = this.root.getBoundingClientRect();
-      return this.items.map((item) => {
-        const r = item.getBoundingClientRect();
-        const y = r.top + r.height / 2 - rootRect.top;
-        const x = this.side === "left" ? 0 : this.w;
-        return { x, y };
-      });
-    }
-
-    draw(t) {
-      const ctx = this.ctx;
-      ctx.clearRect(0, 0, this.w, this.h);
-      const points = this.tipPoints();
-
-      ctx.lineWidth = 1.2;
-      for (let i = 0; i < points.length - 1; i++) {
-        if (!this.revealed[i] || !this.revealed[i + 1]) continue;
-        const a = points[i];
-        const b = points[i + 1];
-
-        ctx.strokeStyle = `rgba(${networkLineRgb},0.55)`;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-
-        if (backwardActive && !reduceMotion) {
-          const phase = (t * 0.4 + i * 0.35) % 1;
-          const travel = 1 - phase; // travels from b (later item) back to a (earlier item)
-          const px = lerp(b.x, a.x, travel);
-          const py = lerp(b.y, a.y, travel);
-          ctx.beginPath();
-          ctx.arc(px, py, 3, 0, Math.PI * 2);
-          ctx.fillStyle = "#f2b400";
-          ctx.fill();
-        }
-      }
-
-      points.forEach((pt, i) => {
-        if (!this.revealed[i]) return;
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${dotRgb},0.55)`;
-        ctx.fill();
-      });
-    }
+      item.style.opacity = progress;
+      item.style.transform = `translateY(${18 * (1 - progress)}px)`;
+    });
   }
-
-  const networks = Array.from(document.querySelectorAll(".touchpoints")).map(
-    (el) => new YearNetwork(el),
-  );
 
   // ---------- Closing constellation ----------
   const constellationCanvas = document.getElementById("constellation");
@@ -291,13 +222,12 @@
   function tick() {
     spineCurrent = lerp(spineCurrent, spineTarget, 0.12);
     spineProgress.style.transform = `scaleY(${spineCurrent})`;
+    updateTouchpoints();
 
     if (!reduceMotion) {
       t += 0.016;
-      networks.forEach((net) => net.draw(t));
       if (constellationActive) drawConstellation(t);
     } else {
-      networks.forEach((net) => net.draw(0));
       drawConstellation(0);
     }
 
@@ -306,7 +236,6 @@
 
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", () => {
-    networks.forEach((net) => net.resize());
     buildConstellation();
     onScroll();
   });
